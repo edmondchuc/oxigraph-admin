@@ -1,39 +1,42 @@
 from http import HTTPStatus
 from typing import List
 
+from fastapi import Depends
 from fastapi.routing import APIRouter
 from fastapi.responses import JSONResponse, Response
+from sqlalchemy.orm import Session
 
-from oxigraph_admin.schemas.user import UserOut, UserIn, UserUpdate, UsersOut
+from oxigraph_admin import schemas
 from oxigraph_admin import crud
+from oxigraph_admin.database import get_db
 
 router = APIRouter()
 
 
-@router.get('/users', response_model=UsersOut)
-def get_users():
-    users = crud.user.get_all()
-    if users:
-        return users
-    else:
-        return Response(status_code=HTTPStatus.NO_CONTENT)
+@router.get('/users', response_model=List[schemas.UserRead])
+def get_users(db: Session = Depends(get_db)):
+    return crud.user.get_all(db)
 
 
-@router.get('/user/{username}', response_model=UserOut)
-def get_user(username: str):
-    return crud.user.get_user(username)
+@router.get('/user/{username}', response_model=schemas.UserRead)
+def get_user(username: str, db: Session = Depends(get_db)):
+    user = crud.user.get(username, db)
+    if user:
+        return user
+    return JSONResponse({'detail': f'User "{username}" not found.'}, status_code=404)
 
 
-@router.post('/user', response_model=UserOut, status_code=HTTPStatus.CREATED)
-def post_user(user: UserIn):
-    return crud.user.create_user(user)
+@router.post('/user', response_model=schemas.UserRead, status_code=HTTPStatus.CREATED)
+def post_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    return crud.user.create(user, db)
 
 
-@router.put('/user', response_model=UserOut)
-def put_user(user: UserUpdate):
-    return crud.user.update_user(user)
+@router.put('/user/{username}', response_model=schemas.UserRead)
+def put_user(user: schemas.UserUpdate, username: str, db: Session = Depends(get_db)):
+    return crud.user.update(username, user, db)
 
 
 @router.delete('/user/{username}')
-def delete_user(username: str):
-    return crud.user.delete_user(username)
+def delete_user(username: str, db: Session = Depends(get_db)):
+    crud.user.delete(username, db)
+    return JSONResponse({'detail': f'User "{username}" has been deleted.'}, status_code=200)

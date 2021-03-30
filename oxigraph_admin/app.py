@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from oxigraph_admin.api import middleware
 from oxigraph_admin.api import api_v1
 from oxigraph_admin import settings
+from oxigraph_admin.database import Base, engine
 
 
 tags_metadata = [
@@ -29,15 +30,7 @@ def create_app():
 
     app.include_router(api_v1.api.api_router_v1, prefix=settings.API_V1_STR)
 
-    # app.add_middleware(middleware.SecurityMiddleware)
-
-    # Set up fastapi_redis_session
-    from fastapi_redis_session.config import basicConfig
-    basicConfig(
-        redisURL='redis://localhost:6379/1',
-        sessionIdName='sessionId',
-        sessionIdGenerator=lambda: str(random.randint(1000, 9999)),
-        expireTime=datetime.timedelta(days=1)
-    )
+    # Use SQLAlchemy to create SQLite database.
+    Base.metadata.create_all(bind=engine)
 
     return app

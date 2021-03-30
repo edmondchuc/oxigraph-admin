@@ -1,3 +1,7 @@
+"""
+This file is no longer required.
+"""
+
 from http import HTTPStatus
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
@@ -5,7 +9,6 @@ from starlette.requests import Request
 from starlette.responses import Response
 from fastapi.responses import JSONResponse
 from basicauth import decode
-from fastapi_redis_session import setSession
 
 from oxigraph_admin.crud.security import is_security_enabled, verify_login, verify_permissions
 from oxigraph_admin.crud.user import UserNotFoundError

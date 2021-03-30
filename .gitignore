@@ -1,6 +1,7 @@
 # Oxigraph Admin
 
 *.json
+*.db
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/pycharm+all,macos,windows,python,venv,vscode,node,react,yarn

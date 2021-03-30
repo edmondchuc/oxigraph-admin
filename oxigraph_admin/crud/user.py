@@ -1,17 +1,12 @@
-from http import HTTPStatus
+import json
+from typing import List
 
 from fastapi import HTTPException
+from sqlalchemy.orm import Session
 
-from oxigraph_admin.schemas.user import UserIn, UserUpdate, UsersOut, UserRaw
+from oxigraph_admin import schemas
+from oxigraph_admin import models
 from oxigraph_admin.crud.security import get_password_hash
-from oxigraph_admin.store import store
-
-
-def is_username_exist(username: str):
-    for user in store.users:
-        if user['username'] == username:
-            return True
-    return False
 
 
 class UserExistsError(HTTPException):
@@ -26,53 +21,49 @@ class UserNotFoundError(HTTPException):
         return f'The user "{value}" was not found.'
 
 
-def get_all() -> UsersOut:
-    users = [{'username': user['username'], 'permissions': user['permissions']} for user in store.users]
-    return UsersOut(users=users)
+def get_all(db: Session) -> List[models.User]:
+    return db.query(models.User).all()
 
 
-def get_user(username: str) -> UserRaw:
-    for user_ in store.users:
-        if user_['username'] == username:
-            return UserRaw(**dict(user_))
-    raise UserNotFoundError(status_code=HTTPStatus.NOT_FOUND, detail=UserNotFoundError.message(username))
+def create(user: schemas.UserCreate, db: Session) -> models.User:
+    if get(user.username, db):
+        raise UserExistsError(status_code=422, detail=UserExistsError.message(user.username))
+
+    hashed_password = get_password_hash(user.password)
+    db_user = models.User(username=user.username, hashed_password=hashed_password, permissions=json.dumps(user.permissions))
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
 
 
-def create_user(user: UserIn) -> UserIn:
-    if is_username_exist(user.username):
-        raise UserExistsError(status_code=HTTPStatus.CONFLICT, detail=UserExistsError.message(user.username))
-    else:
-        password = user.password
-        user_data = user.dict()
-        del user_data['password']
-        user_data['password_hash'] = get_password_hash(password)
-        store.users += [user_data]
-        return user
+def get(username: str, db: Session) -> models.User:
+    return db.query(models.User).filter_by(username=username).first()
 
 
-def update_user(user: UserUpdate) -> UserRaw:
-    for i, user_ in enumerate(store.users):
-        if user_['username'] == user.username:
-            if user.password:
-                password_hash = get_password_hash(user.password)
-                del store['users', i]
-                user_data = user.dict()
-                user_data['password_hash'] = password_hash
-                store.users += [user.dict()]
-                return get_user(user.username)
-            else:
-                password_hash = user_['password_hash']
-                del store['users', i]
-                user_data = user.dict()
-                user_data['password_hash'] = password_hash
-                store.users += [user_data]
-                return get_user(user.username)
-    raise UserNotFoundError(status_code=HTTPStatus.NOT_FOUND, detail=UserNotFoundError.message(user.username))
+def update(username: str, user: schemas.UserUpdate, db: Session) -> models.User:
+    db_user = get(username, db)
+    if not db_user:
+        raise UserNotFoundError(status_code=404, detail=UserNotFoundError.message(username))
+
+    updates = user.dict()
+    if user.password:
+        hashed_password = get_password_hash(user.password)
+        updates['hashed_password'] = hashed_password
+    updates.pop('password')
+    for k, v in dict(updates).items():
+        if v is None:
+            updates.pop(k)
+
+    db.query(models.User).update(updates)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
 
 
-def delete_user(username: str):
-    for i, user in enumerate(store.users):
-        if user['username'] == username:
-            del store['users', i]
-            return {'detail': f'Successfully deleted user "{username}.'}
-    raise UserNotFoundError(status_code=HTTPStatus.NOT_FOUND, detail=UserNotFoundError.message(username))
+def delete(username: str, db: Session):
+    user = get(username, db)
+    if not user:
+        raise UserNotFoundError(status_code=404, detail=UserNotFoundError.message(username))
+    db.delete(user)
+    db.commit()

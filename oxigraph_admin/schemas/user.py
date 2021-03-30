@@ -1,30 +1,55 @@
-from typing import List, Sequence
+from typing import List, Optional
 
-from pydantic import BaseModel
-
-
-class Permissions(BaseModel):
-    permissions: Sequence[str]
+from pydantic import BaseModel, Json
 
 
-class UserIn(Permissions):
+class UserBase(BaseModel):
     username: str
+    is_active: bool = True
+
+
+class UserCreate(UserBase):
     password: str
+    permissions: List[str] = ['query']
 
 
-class UserOut(Permissions):
-    username: str
+class UserRead(UserBase):
+    permissions: Json[List[str]]
+
+    class Config:
+        orm_mode = True
 
 
-class UserUpdate(Permissions):
-    username: str
-    password: str = None
+class UserUpdate(BaseModel):
+    username: Optional[str]
+    password: Optional[str]
+    permissions: Optional[List[str]]
+    is_active: Optional[bool]
 
 
-class UserRaw(Permissions):
-    username: str
-    password_hash: str
+
+# class Permissions(BaseModel):
+#     permissions: Sequence[str]
 
 
-class UsersOut(BaseModel):
-    users: List[UserOut]
+# class UserIn(Permissions):
+#     username: str
+#     password: str
+#
+#
+# class UserOut(Permissions):
+#     username: str
+#
+#
+# class UserUpdate(Permissions):
+#     username: str
+#     password: str = None
+#
+#
+# class UserRaw(Permissions):
+#     username: str
+#     password_hash: str
+#
+#
+# class UsersOut(BaseModel):
+#     users: List[UserOut]
