@@ -50,7 +50,7 @@ def create_user(user: UserIn) -> UserIn:
         return user
 
 
-def update_user(user: UserUpdate) -> UserIn:
+def update_user(user: UserUpdate) -> UserRaw:
     for i, user_ in enumerate(store.users):
         if user_['username'] == user.username:
             if user.password:

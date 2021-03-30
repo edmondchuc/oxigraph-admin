@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Upcoming
 - Oxigraph Admin backend tests
 - Oxigraph Admin frontend MVP
+- Sign in and sign out routes
 - Evaluate appropriate license
 
 

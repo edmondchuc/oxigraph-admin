@@ -1,3 +1,6 @@
+import random
+import datetime
+
 from fastapi import FastAPI
 
 from oxigraph_admin.api import middleware
@@ -26,6 +29,15 @@ def create_app():
 
     app.include_router(api_v1.api.api_router_v1, prefix=settings.API_V1_STR)
 
-    app.add_middleware(middleware.SecurityMiddleware)
+    # app.add_middleware(middleware.SecurityMiddleware)
+
+    # Set up fastapi_redis_session
+    from fastapi_redis_session.config import basicConfig
+    basicConfig(
+        redisURL='redis://localhost:6379/1',
+        sessionIdName='sessionId',
+        sessionIdGenerator=lambda: str(random.randint(1000, 9999)),
+        expireTime=datetime.timedelta(days=1)
+    )
 
     return app
