@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from oxigraph_admin import schemas
 from oxigraph_admin import models
-from oxigraph_admin.crud.security import get_password_hash
+from oxigraph_admin.crud.auth import get_password_hash
 
 
 class UserExistsError(HTTPException):

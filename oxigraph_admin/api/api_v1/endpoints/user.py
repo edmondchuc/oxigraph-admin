@@ -1,12 +1,13 @@
 from http import HTTPStatus
 from typing import List
 
-from fastapi import Depends
+from fastapi import Depends, Security
 from fastapi.routing import APIRouter
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from oxigraph_admin import schemas
+from oxigraph_admin import models
 from oxigraph_admin import crud
 from oxigraph_admin.database import get_db
 
@@ -14,7 +15,7 @@ router = APIRouter()
 
 
 @router.get('/users', response_model=List[schemas.UserRead])
-def get_users(db: Session = Depends(get_db)):
+def get_users(db: Session = Depends(get_db), user: models.User = Security(crud.auth.get_current_active_user, scopes=['user_management'])):
     return crud.user.get_all(db)
 
 
@@ -40,3 +41,8 @@ def put_user(user: schemas.UserUpdate, username: str, db: Session = Depends(get_
 def delete_user(username: str, db: Session = Depends(get_db)):
     crud.user.delete(username, db)
     return JSONResponse({'detail': f'User "{username}" has been deleted.'}, status_code=200)
+
+
+@router.get('/user', response_model=schemas.UserRead)
+def get(user: models.User = Security(crud.auth.get_current_active_user)):
+    return user

@@ -15,8 +15,12 @@ tags_metadata = [
         'description': 'Manage security settings.'
     },
     {
+        'name': 'Authentication',
+        'description': 'User authentication'
+    },
+    {
         'name': 'Users',
-        'description': 'Manage authentication and authorization for users.'
+        'description': 'Manage authorization for users.'
     },
     {
         'name': 'SPARQL Protocol Service',

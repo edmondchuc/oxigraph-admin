@@ -10,7 +10,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
-    permissions: List[str] = ['query']
+    permissions: List[str] = ['query', 'me']
 
 
 class UserRead(UserBase):
